@@ -62,11 +62,11 @@ function getActionInputs() {
     const tomcatExtrasFolder = core.getInput("tomcat-extras-folder"),
           tomcatExtrasFolderPath = `${process.env.GITHUB_WORKSPACE}/${tomcatExtrasFolder}`,
           portsRaw = core.getInput("ports"),
-          ports = [],
-          timezone = core.getInput("timezone"),
-          epFiles = [],
-          imageName = core.getInput("image-name"),
-          tagName = core.getInput("tag-name");
+          timezone = core.getInput("timezone");
+    let ports = [],
+        epFiles = [],
+        imageName = core.getInput("image-name"),
+        tagName = core.getInput("tag-name");
     if (!fs.existsSync(tomcatExtrasFolderPath)) {
         core.setFailed(`Tomcat extras folder "${tomcatExtrasFolder}" not found.`);
         process.exit();
