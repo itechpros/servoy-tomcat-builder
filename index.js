@@ -4,7 +4,6 @@ const childProcess = require("child_process");
 const fs = require("fs");
 
 const core = require("@actions/core");
-const tempy = import("tempy");
 
 try {
     // Check to make sure the requested Tomcat/Java version exists in our GitHub Container Registry
@@ -19,8 +18,10 @@ try {
     }
 
     // Create our Dockerfile in a temporary folder
-    let temporaryFolder = tempy.temporaryDirectory(),
-        temporaryDockerfile = `${temporaryFolder}/Dockerfile`;
+    let temporaryFolder = `/tmp/${getNowString()}`;
+    if (!fs.existsSync(temporaryFolder))
+        fs.mkdir(temporaryFolder);
+    let temporaryDockerfile = `${temporaryFolder}/Dockerfile`;
     generateTemporaryDockerfile(temporaryDockerfile, inputs, useCustomStartupScript);
 
     let generatedImageTag = buildDockerImage(temporaryDockerfile, inputs);
@@ -108,19 +109,7 @@ function getActionInputs() {
             tagName = tagFormat.exec(githubRef)[1];
         } else {
             // Use the current date-time if we don't have a reliable ref to go on.
-            let now = new Date(),
-                year = now.getFullYear(),
-                month = now.getMonth() + 1,
-                day = now.getDate(),
-                hour = now.getHours(),
-                minute = now.getMinutes(),
-                second = now.getSeconds(),
-                monthString = month < 10 ? `0${month}` : month,
-                dayString = day < 10 ? `0${day}` : day,
-                hourString = hour < 10 ? `0${hour}` : hour,
-                minuteString = minute < 10 ? `0${minute}` : minute,
-                secondString = second < 10 ? `0${second}` : second;
-            tagName = `${year}-${monthString}-${dayString}_${hourString}-${minuteString}-${secondString}`;
+            tagName = getNowString();
         }
     }
 
@@ -135,6 +124,22 @@ function getActionInputs() {
         imageName,
         tagName
     }
+}
+
+function getNowString() {
+    let now = new Date(),
+        year = now.getFullYear(),
+        month = now.getMonth() + 1,
+        day = now.getDate(),
+        hour = now.getHours(),
+        minute = now.getMinutes(),
+        second = now.getSeconds(),
+        monthString = month < 10 ? `0${month}` : month,
+        dayString = day < 10 ? `0${day}` : day,
+        hourString = hour < 10 ? `0${hour}` : hour,
+        minuteString = minute < 10 ? `0${minute}` : minute,
+        secondString = second < 10 ? `0${second}` : second;
+    return `${year}-${monthString}-${dayString}_${hourString}-${minuteString}-${secondString}`;
 }
 
 function verifyTomcatImage(inputs) {
