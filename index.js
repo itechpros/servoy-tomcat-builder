@@ -68,15 +68,17 @@ function getActionInputs() {
         epFiles = [],
         imageName = core.getInput("image-name"),
         tagName = core.getInput("tag-name");
-    if (!fs.existsSync(tomcatExtrasFolderPath)) {
-        core.setFailed(`Tomcat extras folder "${tomcatExtrasFolder}" not found.`);
-        process.exit();
-    } else if (!fs.statSync(tomcatExtrasFolderPath).isDirectory()) {
-        core.setFailed(`Tomcat extras folder "${tomcatExtrasFolder}" is not a directory.`);
-        process.exit();
+    if (!~[null, undefined, ""].indexOf(tomcatExtrasFolder)) {
+        if (!fs.existsSync(tomcatExtrasFolderPath)) {
+            core.setFailed(`Tomcat extras folder "${tomcatExtrasFolder}" not found.`);
+            process.exit();
+        } else if (!fs.statSync(tomcatExtrasFolderPath).isDirectory()) {
+            core.setFailed(`Tomcat extras folder "${tomcatExtrasFolder}" is not a directory.`);
+            process.exit();
+        }
     }
 
-    if (portsRaw !== null) {
+    if (!~[null, undefined, ""].indexOf(portsRaw)) {
         let tempPorts = portsRaw.split(",").map((port) => port.trim()),
             portFormat = /^[0-9]+$/;
         tempPorts.forEach((port) => {
@@ -88,15 +90,15 @@ function getActionInputs() {
         ports = tempPorts.map((port) => parseInt(port, 10));
     }
 
-    if (core.getInput("ep-files") !== "")
+    if (!~[null, undefined, ""].indexOf(core.getInput("ep-files")))
         epFiles = core.getMultilineInput("ep-files");
 
-    if (imageName === null) {
+    if (~[null, undefined, ""].indexOf(imageName)) {
         // Default the image name to the repository owner/repository name (ex. "octocat/hello-world") in GitHub Container Registry.
         imageName = `ghcr.io/${process.env.GITHUB_REPOSITORY}`;
     }
 
-    if (tagName === null) {
+    if (~[null, undefined, ""].indexOf(tagName)) {
         let githubRef = process.env.GITHUB_REF,
             branchFormat = /^refs\/heads\/(.*)$/,
             prFormat = /^refs\/pull\/([^/]+)\/merge$/,
@@ -187,7 +189,7 @@ function generateTemporaryDockerfile(tempDockerfilePath, inputs, useCustomStartu
         `FROM ghcr.io/itechpros/tomcat:${inputs.tomcatVersion}-java${inputs.javaVersion}`
     ];
 
-    if (inputs.timezone) {
+    if (!~[null, undefined, ""].indexOf(inputs.timezone)) {
         dockerfileContentsArray = dockerfileContentsArray.concat([
             `ENV TIME_ZONE ${inputs.timezone}`,
             `RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone`
