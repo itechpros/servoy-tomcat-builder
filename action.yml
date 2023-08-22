@@ -1,0 +1,32 @@
+name: "Servoy Tomcat Builder"
+author: "Servoy Components"
+description: "A GitHub Action used to build Tomcat Docker images that contain a Servoy WAR file."
+branding:
+  icon: "box"
+  color: "orange"
+inputs:
+  tomcat-version:
+    description: ""
+    required: true
+  java-version:
+    description: ""
+    required: true
+  war-file:
+    description: ""
+    required: true
+  tomcat-extras-folder:
+    description: ""
+  ports:
+    description: ""
+    default: "8080"
+  timezone:
+    description: ""
+  ep-files:
+    description: ""
+  image-name:
+    description: ""
+  tag-name:
+    description: ""
+runs:
+  using: "node20"
+  main: "index.js"
