@@ -20,7 +20,7 @@ try {
     // Create our Dockerfile in a temporary folder
     let temporaryFolder = `/tmp/${getNowString()}`;
     if (!fs.existsSync(temporaryFolder))
-        fs.mkdir(temporaryFolder);
+        fs.mkdirSync(temporaryFolder);
     let temporaryDockerfile = `${temporaryFolder}/Dockerfile`;
     generateTemporaryDockerfile(temporaryDockerfile, inputs, useCustomStartupScript);
 
