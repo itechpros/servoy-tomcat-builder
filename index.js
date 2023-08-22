@@ -4,7 +4,7 @@ const childProcess = require("child_process");
 const fs = require("fs");
 
 const core = require("@actions/core");
-const tempy = require("tempy");
+const tempy = import("tempy");
 
 try {
     // Check to make sure the requested Tomcat/Java version exists in our GitHub Container Registry
