@@ -103,9 +103,10 @@ function getActionInputs() {
         // Check if they put a tag name in their most recent commit message.
         if (github.context.eventName === "push") {
             let tagNameFormat = /\[tag-name=([^\]]+)\]/gm,
-                commitMessage = getMostRecentCommitMessage();
-            if (tagNameFormat.test(commitMessage))
-                tagName = tagNameFormat.exec(commitMessage)[1];
+                commitMessage = getMostRecentCommitMessage(),
+                tagNameMatchResult = tagNameFormat.exec(commitMessage);
+            if (tagNameMatchResult !== null)
+                tagName = tagNameMatchResult[1];
         }
 
         // Use the current date-time if the user didn't provide a tag name.
@@ -114,13 +115,16 @@ function getActionInputs() {
     } else {
         let branchFormat = /^refs\/heads\/(.*)$/,
             prFormat = /^refs\/pull\/([^/]+)\/merge$/,
-            tagFormat = /^refs\/tags\/(.*)$/;
-        if (branchFormat.test(tagName)) {
-            tagName = branchFormat.exec(tagName)[1];
-        } else if (prFormat.test(tagName)) {
-            tagName = prFormat.exec(tagName)[1];
-        } else if (tagFormat.test(tagName)) {
-            tagName = tagFormat.exec(tagName)[1];
+            tagFormat = /^refs\/tags\/(.*)$/,
+            branchFormatResult = branchFormat.exec(tagName),
+            prFormatResult = prFormat.exec(tagName),
+            tagFormatResult = tagFormat.exec(tagName);
+        if (branchFormatResult !== null) {
+            tagName = branchFormatResult[1];
+        } else if (prFormatResult !== null) {
+            tagName = prFormatResult[1];
+        } else if (tagFormatResult !== null) {
+            tagName = tagFormatResult[1];
         }
     }
 
