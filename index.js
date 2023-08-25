@@ -4,6 +4,7 @@ const childProcess = require("child_process");
 const fs = require("fs");
 
 const core = require("@actions/core");
+const github = require("@actions/github");
 
 try {
     // Check to make sure the requested Tomcat/Java version exists in our GitHub Container Registry
@@ -99,19 +100,27 @@ function getActionInputs() {
     }
 
     if (~[null, undefined, ""].indexOf(tagName)) {
-        let githubRef = process.env.GITHUB_REF,
-            branchFormat = /^refs\/heads\/(.*)$/,
+        // Check if they put a tag name in their most recent commit message.
+        if (github.context.eventName === "push") {
+            let tagNameFormat = /\[tag-name=([^\]]+)\]/gm,
+                commitMessage = getMostRecentCommitMessage();
+            if (tagNameFormat.test(commitMessage))
+                tagName = tagNameFormat.exec(commitMessage)[1];
+        }
+
+        // Use the current date-time if the user didn't provide a tag name.
+        if (~[null, undefined, ""].indexOf(tagName))
+            tagName = getNowString();
+    } else {
+        let branchFormat = /^refs\/heads\/(.*)$/,
             prFormat = /^refs\/pull\/([^/]+)\/merge$/,
             tagFormat = /^refs\/tags\/(.*)$/;
-        if (branchFormat.test(githubRef)) {
-            tagName = branchFormat.exec(githubRef)[1];
-        } else if (prFormat.test(githubRef)) {
-            tagName = prFormat.exec(githubRef)[1];
-        } else if (tagFormat.test(githubRef)) {
-            tagName = tagFormat.exec(githubRef)[1];
-        } else {
-            // Use the current date-time if we don't have a reliable ref to go on.
-            tagName = getNowString();
+        if (branchFormat.test(tagName)) {
+            tagName = branchFormat.exec(tagName)[1];
+        } else if (prFormat.test(tagName)) {
+            tagName = prFormat.exec(tagName)[1];
+        } else if (tagFormat.test(tagName)) {
+            tagName = tagFormat.exec(tagName)[1];
         }
     }
 
@@ -125,6 +134,28 @@ function getActionInputs() {
         epFiles,
         imageName,
         tagName
+    }
+}
+
+function getMostRecentCommitMessage() {
+    let gitOutputProcess = childProcess.spawnSync(
+        "git",
+        [
+            "log",
+            "-1",
+            "--pretty=%B"
+        ],
+        {
+            cwd: process.env.GITHUB_WORKSPACE,
+            encoding: "utf-8"
+        }
+    );
+
+    if (gitOutputProcess.status !== 0) {
+        // Can't determine latest commit, so don't return it.
+        return "";
+    } else {
+        return gitOutputProcess.stdout;
     }
 }
 
