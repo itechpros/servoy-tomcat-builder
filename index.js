@@ -231,21 +231,22 @@ function generateTemporaryDockerfile(tempDockerfilePath, inputs, useCustomStartu
         ]);
     }
 
-    dockerfileContentsArray.push(`COPY ${inputs.warFile} /usr/share/tomcat/webapps/`);
-    
-    if (!~[null, undefined, ""].indexOf(inputs.tomcatExtrasFolder))
-        dockerfileContentsArray.push(`COPY ${inputs.tomcatExtrasFolder}/ /usr/share/tomcat/`);
-
-    if (useCustomStartupScript)
-        dockerfileContentsArray.push("COPY custom_tomcat_start.sh /usr/share/tomcat/tomcat_start.sh");
-
     inputs.ports.forEach((port) => {
         dockerfileContentsArray.push(`EXPOSE ${port}`);
     });
 
-    if (useCustomStartupScript)
-        dockerfileContentsArray.push('CMD ["/usr/share/tomcat/tomcat_start.sh"]');
+    if (!~[null, undefined, ""].indexOf(inputs.tomcatExtrasFolder))
+        dockerfileContentsArray.push(`COPY ${inputs.tomcatExtrasFolder}/ /usr/share/tomcat/`);
 
+    if (useCustomStartupScript) {
+        dockerfileContentsArray = dockerfileContentsArray.concat([
+            "COPY custom_tomcat_start.sh /usr/share/tomcat/tomcat_start.sh",
+            'CMD ["/usr/share/tomcat/tomcat_start.sh"]'
+        ]);
+    }
+    
+    dockerfileContentsArray.push(`COPY ${inputs.warFile} /usr/share/tomcat/webapps/`);
+    
     let dockerfileContents = dockerfileContentsArray.join("\n");
     core.info(`Dockerfile contents:\n${dockerfileContents}`);
     fs.writeFileSync(tempDockerfilePath, dockerfileContents);
