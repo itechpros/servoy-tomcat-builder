@@ -86,7 +86,7 @@ function getActionInputs() {
         epFiles = [],
         imageName = core.getInput("image-name"),
         tagName = core.getInput("tag-name");
-    if (!~[null, undefined, ""].indexOf(tomcatExtrasFolder)) {
+    if (isSet(tomcatExtrasFolder)) {
         if (!fs.existsSync(tomcatExtrasFolderPath)) {
             core.setFailed(`Tomcat extras folder "${tomcatExtrasFolder}" not found.`);
             process.exit();
@@ -96,7 +96,7 @@ function getActionInputs() {
         }
     }
 
-    if (!~[null, undefined, ""].indexOf(portsRaw)) {
+    if (isSet(portsRaw)) {
         let tempPorts = portsRaw.split(",").map((port) => port.trim()),
             portFormat = /^[0-9]+$/;
         tempPorts.forEach((port) => {
@@ -108,15 +108,15 @@ function getActionInputs() {
         ports = tempPorts.map((port) => parseInt(port, 10));
     }
 
-    if (!~[null, undefined, ""].indexOf(core.getInput("ep-files")))
+    if (isSet(core.getInput("ep-files")))
         epFiles = core.getMultilineInput("ep-files");
 
-    if (~[null, undefined, ""].indexOf(imageName)) {
+    if (!isSet(imageName)) {
         // Default the image name to the repository owner/repository name (ex. "octocat/hello-world") in GitHub Container Registry.
         imageName = `ghcr.io/${process.env.GITHUB_REPOSITORY}`;
     }
 
-    if (~[null, undefined, ""].indexOf(tagName)) {
+    if (!isSet(tagName)) {
         // Check if they put a tag name in their most recent commit message.
         if (github.context.eventName === "push") {
             let tagNameFormat = /\[tag-name=([^\]]+)\]/gm,
@@ -127,7 +127,7 @@ function getActionInputs() {
         }
 
         // Use the current date-time if the user didn't provide a tag name.
-        if (~[null, undefined, ""].indexOf(tagName))
+        if (!isSet(tagName))
             tagName = getNowString();
     } else {
         let branchFormat = /^refs\/heads\/(.*)$/,
@@ -248,6 +248,7 @@ function generateTemporaryDockerfile(tempDockerfilePath, inputs, useCustomStartu
         dockerfileContentsArray.push(`FROM ${inputs.baseImage}`);
     }
 
+    if (isSet(inputs.timezone)) {
         dockerfileContentsArray = dockerfileContentsArray.concat([
             `ENV TIME_ZONE ${inputs.timezone}`,
             `RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone`
@@ -258,7 +259,7 @@ function generateTemporaryDockerfile(tempDockerfilePath, inputs, useCustomStartu
         dockerfileContentsArray.push(`EXPOSE ${port}`);
     });
 
-    if (!~[null, undefined, ""].indexOf(inputs.tomcatExtrasFolder))
+    if (isSet(inputs.tomcatExtrasFolder))
         dockerfileContentsArray.push(`COPY ${inputs.tomcatExtrasFolder}/ /usr/share/tomcat/`);
 
     if (useCustomStartupScript) {
