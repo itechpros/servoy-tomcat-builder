@@ -230,17 +230,8 @@ function checkForDockerImageExistence(imageName) {
 
 function generateCustomStartupScript(inputs) {
     let customStartupScriptPath = `${process.env.GITHUB_WORKSPACE}/custom_tomcat_start.sh`,
-        startupScriptContentArray = [
-            "#!/bin/bash",
-            "",
-            'echo "Filling templates with environmental variables"'
-        ];
+        startupScriptContentArray = ["#!/bin/bash"];
     startupScriptContentArray = startupScriptContentArray.concat(inputs.epFiles.map((epFile) => `ep /usr/share/tomcat/${epFile}`));
-    startupScriptContentArray = startupScriptContentArray.concat([
-        "",
-        'echo "Starting Tomcat"',
-        "/usr/share/tomcat/bin/catalina.sh run"
-    ]);
 
     let startupScriptContent = startupScriptContentArray.join("\n");
     core.info("Startup script content:\n" + startupScriptContent);
@@ -272,8 +263,8 @@ function generateTemporaryDockerfile(tempDockerfilePath, inputs, useCustomStartu
 
     if (useCustomStartupScript) {
         dockerfileContentsArray = dockerfileContentsArray.concat([
-            "COPY custom_tomcat_start.sh /usr/share/tomcat/tomcat_start.sh",
-            'CMD ["/usr/share/tomcat/tomcat_start.sh"]'
+            "COPY custom_tomcat_start.sh /usr/share/tomcat/custom_tomcat_start.sh",
+            "RUN dos2unix /usr/share/tomcat/custom_tomcat_start.sh"
         ]);
     }
     
