@@ -7,10 +7,10 @@ branding:
 inputs:
   tomcat-version:
     description: ""
-    required: true
   java-version:
     description: ""
-    required: true
+  base-image:
+    description: ""
   war-file:
     description: ""
     required: true

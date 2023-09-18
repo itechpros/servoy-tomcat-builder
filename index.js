@@ -37,18 +37,35 @@ function getActionInputs() {
     // Required inputs
     const tomcatVersion = core.getInput("tomcat-version"),
           javaVersion = core.getInput("java-version"),
+          baseImage = core.getInput("base-image"),
           warFile = core.getInput("war-file"),
           tomcatVersionFormat = /^[0-9]+$/,
           javaVersionFormat = /^[0-9]+$/,
           warFilePath = `${process.env.GITHUB_WORKSPACE}/${warFile}`;
 
-    if (!tomcatVersionFormat.test(tomcatVersion)) {
-        core.setFailed(`Invalid Tomcat version: ${tomcatVersion}`);
-        process.exit();
+    if (isSet(tomcatVersion) && isSet(javaVersion)) {
+        if (!tomcatVersionFormat.test(tomcatVersion)) {
+            core.setFailed(`Invalid Tomcat version: ${tomcatVersion}`);
+            process.exit();
+        }
+
+        if (!javaVersionFormat.test(javaVersion)) {
+            core.setFailed(`Invalid Java version: ${javaVersion}`);
+            process.exit();
+        }
     }
 
-    if (!javaVersionFormat.test(javaVersion)) {
-        core.setFailed(`Invalid Java version: ${javaVersion}`);
+    if (isSet(baseImage) && isSet(tomcatVersion)) {
+        core.setFailed("base-image and tomcat-version cannot be set at the same time.");
+        process.exit();
+    } else if (isSet(baseImage) && isSet(javaVersion)) {
+        core.setFailed("base-image and java-version cannot be set at the same time.");
+        process.exit();
+    } else if ((isSet(tomcatVersion) && !isSet(javaVersion)) || (!isSet(tomcatVersion) && isSet(javaVersion))) {
+        core.setFailed("tomcat-version and java-version are required when not using base-image.");
+        process.exit();
+    } else if (!isSet(tomcatVersion) && !isSet(javaVersion) && !isSet(baseImage)) {
+        core.setFailed("tomcat-version and java-version are required, or provide a base-image.");
         process.exit();
     }
 
@@ -131,6 +148,7 @@ function getActionInputs() {
     return {
         tomcatVersion,
         javaVersion,
+        baseImage,
         warFile,
         tomcatExtrasFolder,
         ports,
@@ -139,6 +157,10 @@ function getActionInputs() {
         imageName,
         tagName
     }
+}
+
+function isSet(value) {
+    return [null, undefined, ""].indexOf(value) === -1;
 }
 
 function getMostRecentCommitMessage() {
@@ -180,12 +202,20 @@ function getNowString() {
 }
 
 function verifyTomcatImage(inputs) {
-    core.info(`Checking for existence of Tomcat image for Tomcat version: ${inputs.tomcatVersion} and Java version: ${inputs.javaVersion}`);
+    if (isSet(inputs.tomcatVersion) && isSet(inputs.javaVersion)) {
+        core.info(`Checking for existence of Tomcat image for Tomcat version: ${inputs.tomcatVersion} and Java version: ${inputs.javaVersion}`);
+        const tomcatImageName = `${inputs.tomcatVersion}-java${inputs.javaVersion}`;
+        checkForDockerImageExistence(`ghcr.io/itechpros/tomcat:${tomcatImageName}`);
+    } else if (isSet(inputs.baseImage)) {
+        core.info(`Checking for existence of Docker image: ${inputs.baseImage}`);
+        checkForDockerImageExistence(inputs.baseImage);
+    }
+}
 
-    const tomcatImageName = `${inputs.tomcatVersion}-java${inputs.javaVersion}`,
-          inspectManifestProcess = childProcess.spawnSync(
+function checkForDockerImageExistence(imageName) {
+    const inspectManifestProcess = childProcess.spawnSync(
               "docker",
-              ["manifest", "inspect", `ghcr.io/itechpros/tomcat:${tomcatImageName}`],
+              ["manifest", "inspect", imageName],
               { encoding: "utf-8" }
           );
     if (~[null, 1].indexOf(inspectManifestProcess.status)) {
@@ -220,11 +250,13 @@ function generateCustomStartupScript(inputs) {
 }
 
 function generateTemporaryDockerfile(tempDockerfilePath, inputs, useCustomStartupScript) {
-    let dockerfileContentsArray = [
-        `FROM ghcr.io/itechpros/tomcat:${inputs.tomcatVersion}-java${inputs.javaVersion}`
-    ];
+    let dockerfileContentsArray = [];
+    if (isSet(inputs.tomcatVersion) && isSet(inputs.javaVersion)) {
+        dockerfileContentsArray.push(`FROM ghcr.io/itechpros/tomcat:${inputs.tomcatVersion}-java${inputs.javaVersion}`);
+    } else if (isSet(inputs.baseImage)) {
+        dockerfileContentsArray.push(`FROM ${inputs.baseImage}`);
+    }
 
-    if (!~[null, undefined, ""].indexOf(inputs.timezone)) {
         dockerfileContentsArray = dockerfileContentsArray.concat([
             `ENV TIME_ZONE ${inputs.timezone}`,
             `RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone`

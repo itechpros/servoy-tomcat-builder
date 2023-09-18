@@ -169,12 +169,22 @@ jobs:
 
 ## Options
 
-- ***tomcat-version*** 🔴 *required*  
-  Version of Tomcat to use in your Docker image. Supported options are: `8`, `9`, or `10`.  
-  **Note:** Our Tomcat images are updated monthly with operating system updates as well as the latest minor & patch version of the provided Tomcat version.
-- ***java-version*** 🔴 *required*  
-  Version of Java to use in your Docker image. Supported versions are: `8`, or `11`.  
-  **Note:** Tomcat 10 only supports Java 11.
+- ***tomcat-version*** 🔴 *required (see note)*  
+  Version of Tomcat to use in your Docker image. Supported options are: `8`, or `9`.  
+  **Note:** Our Tomcat images are updated monthly with operating system updates as well as the latest minor & patch version of the provided Tomcat version.  
+  **Note:** One of the following conditions need to be met:  
+   - tomcat-version and java-version are specified
+   - base-image is specified
+- ***java-version*** 🔴 *required (see note)*  
+  Version of Java to use in your Docker image. Supported versions are: `8`, `11`, or `17`.  
+  **Note:** One of the following conditions need to be met:  
+   - tomcat-version and java-version are specified
+   - base-image is specified
+- ***base-image*** 🔴 *required (see note)*  
+  Alternate base image to use for the resulting Docker image.  
+  **Note:** One of the following conditions need to be met:  
+   - tomcat-version and java-version are specified
+   - base-image is specified
 - ***war-file***  🔴 *required*  
   Path and name of the WAR file to be included in the Docker image. Path should be relative to the root directory of your GitHub repository.  
   **Examples:**
